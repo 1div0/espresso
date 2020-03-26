@@ -20,6 +20,7 @@ from fairseq import checkpoint_utils, distributed_utils, options, tasks, utils
 from fairseq.data import iterators
 from fairseq.logging import meters, metrics, progress_bar
 from fairseq.trainer import Trainer
+from fairseq.model_parallel.megatron_trainer import MegatronTrainer
 
 
 logging.basicConfig(
@@ -36,6 +37,7 @@ def main(args, init_distributed=False):
 
     assert args.max_tokens is not None or args.max_sentences is not None, \
         'Must specify batch size either with --max-tokens or --max-sentences'
+    metrics.reset()
 
     # Initialize CUDA and distributed training
     if torch.cuda.is_available() and not args.cpu:
@@ -69,7 +71,11 @@ def main(args, init_distributed=False):
     ))
 
     # Build trainer
-    trainer = Trainer(args, task, model, criterion)
+    if args.model_parallel_size == 1:
+        trainer = Trainer(args, task, model, criterion)
+    else:
+        trainer = MegatronTrainer(args, task, model, criterion)
+
     logger.info('training on {} GPUs'.format(args.distributed_world_size))
     logger.info('max tokens per GPU = {} and max sentences per GPU = {}'.format(
         args.max_tokens,
