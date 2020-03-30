@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import re
 from typing import List, Optional
 
 from fairseq.data.encoders import register_bpe
